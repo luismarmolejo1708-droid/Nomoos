@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+    <ui:composition template="/template.xhtml">
+        <ui:define name="title">
+            <h:outputText value="#{bundle.CreateAdministracionTitle}"></h:outputText>
+        </ui:define>
+        <ui:define name="body">
+            <h:panelGroup id="messagePanel" layout="block">
+                <h:messages errorStyle="color: red" infoStyle="color: green" layout="table"/>
+            </h:panelGroup>
+            <h:form>
+                <h:panelGrid columns="2">
+                    <h:outputLabel value="#{bundle.CreateAdministracionLabel_idTrabajador}" for="idTrabajador" />
+                    <h:inputText id="idTrabajador" value="#{administracionController.selected.idTrabajador}" title="#{bundle.CreateAdministracionTitle_idTrabajador}" required="true" requiredMessage="#{bundle.CreateAdministracionRequiredMessage_idTrabajador}"/>
+                    <h:outputLabel value="#{bundle.CreateAdministracionLabel_nombre}" for="nombre" />
+                    <h:inputText id="nombre" value="#{administracionController.selected.nombre}" title="#{bundle.CreateAdministracionTitle_nombre}" required="true" requiredMessage="#{bundle.CreateAdministracionRequiredMessage_nombre}"/>
+                    <h:outputLabel value="#{bundle.CreateAdministracionLabel_cargo}" for="cargo" />
+                    <h:inputText id="cargo" value="#{administracionController.selected.cargo}" title="#{bundle.CreateAdministracionTitle_cargo}" required="true" requiredMessage="#{bundle.CreateAdministracionRequiredMessage_cargo}"/>
+                    <h:outputLabel value="#{bundle.CreateAdministracionLabel_telefono}" for="telefono" />
+                    <h:inputText id="telefono" value="#{administracionController.selected.telefono}" title="#{bundle.CreateAdministracionTitle_telefono}" required="true" requiredMessage="#{bundle.CreateAdministracionRequiredMessage_telefono}"/>
+                    <h:outputLabel value="#{bundle.CreateAdministracionLabel_sede}" for="sede" />
+                    <h:inputText id="sede" value="#{administracionController.selected.sede}" title="#{bundle.CreateAdministracionTitle_sede}" required="true" requiredMessage="#{bundle.CreateAdministracionRequiredMessage_sede}"/>
+                    <h:outputLabel value="#{bundle.CreateAdministracionLabel_correo}" for="correo" />
+                    <h:inputText id="correo" value="#{administracionController.selected.correo}" title="#{bundle.CreateAdministracionTitle_correo}" required="true" requiredMessage="#{bundle.CreateAdministracionRequiredMessage_correo}"/>
+                </h:panelGrid>
+                <br />
+                <h:commandLink action="#{administracionController.create}" value="#{bundle.CreateAdministracionSaveLink}" />
+                <br />
+                <br />
+                <h:commandLink action="#{administracionController.prepareList}" value="#{bundle.CreateAdministracionShowAllLink}" immediate="true"/>
+                <br />
+                <br />
+                <h:link outcome="/index" value="#{bundle.CreateAdministracionIndexLink}"/>
+            </h:form>
+        </ui:define>
+    </ui:composition>
+
+</html>
