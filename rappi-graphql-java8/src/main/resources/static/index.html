@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos RAPPI - GraphQL</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;color:#222}
+  header{background:#ff441f;color:#fff;padding:16px 24px;font-size:20px;font-weight:bold}
+  main{max-width:1000px;margin:20px auto;padding:0 12px}
+  section{background:#fff;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px #0002}
+  h2{margin-top:0;font-size:17px}
+  input{padding:7px;margin:3px;border:1px solid #bbb;border-radius:4px}
+  button{padding:8px 14px;background:#ff441f;color:#fff;border:0;border-radius:4px;cursor:pointer;margin:3px}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+  th,td{border-bottom:1px solid #ddd;padding:6px;text-align:left}
+  th{background:#fafafa}
+  .msg{margin-top:8px;font-weight:bold}.ok{color:#0a7d2c}.err{color:#c00}
+</style>
+</head>
+<body>
+<header>Pedidos RAPPI &ndash; Cliente GraphQL</header>
+<main>
+  <section>
+    <h2>1. Pedidos del d&iacute;a</h2>
+    <button onclick="cargarDia()">Consultar pedidos de hoy</button>
+    <button onclick="pdfDia()">Descargar reporte PDF</button>
+    <div id="tablaDia"></div>
+  </section>
+
+  <section>
+    <h2>2. Buscar pedido por c&eacute;dula o ID</h2>
+    <input id="bCedula" placeholder="C&eacute;dula del cliente">
+    <button onclick="buscarCedula()">Buscar por c&eacute;dula</button><br>
+    <input id="bId" placeholder="ID del pedido" type="number">
+    <button onclick="buscarId()">Buscar por ID</button>
+    <button onclick="pdfPedido()">PDF del pedido (ID)</button>
+    <div id="tablaBusqueda"></div>
+  </section>
+
+  <section>
+    <h2>3. Ingresar nuevo pedido</h2>
+    <input id="nCedula" placeholder="C&eacute;dula">
+    <input id="nNombre" placeholder="Nombre">
+    <input id="nDir" placeholder="Direcci&oacute;n de entrega">
+    <input id="nDesc" placeholder="Descripci&oacute;n">
+    <input id="nTotal" placeholder="Total" type="number">
+    <button onclick="crear()">Guardar pedido</button>
+    <div id="msgCrear" class="msg"></div>
+  </section>
+</main>
+
+<script>
+const CAMPOS = "id cedulaCliente nombreCliente direccionEntrega descripcion estado total fecha hora";
+
+/** Envia una consulta/mutacion al endpoint /graphql y devuelve data. */
+async function gql(query, variables) {
+  const r = await fetch("/graphql", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({query, variables})
+  });
+  const j = await r.json();
+  if (j.errors) throw new Error(j.errors[0].message);
+  return j.data;
+}
+
+function tabla(lista) {
+  if (!lista.length) return "<p>Sin resultados.</p>";
+  let h = "<table><tr><th>ID</th><th>C&eacute;dula</th><th>Cliente</th><th>Direcci&oacute;n</th><th>Descripci&oacute;n</th><th>Estado</th><th>Total</th><th>Fecha</th></tr>";
+  for (const p of lista) {
+    h += `<tr><td>${p.id}</td><td>${p.cedulaCliente}</td><td>${p.nombreCliente}</td><td>${p.direccionEntrega}</td>
+          <td>${p.descripcion}</td><td>${p.estado}</td><td>$${Number(p.total).toLocaleString()}</td><td>${p.fecha} ${p.hora}</td></tr>`;
+  }
+  return h + "</table>";
+}
+
+function descargar(base64, nombre) {
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], {type: "application/pdf"}));
+  const a = document.createElement("a");
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function cargarDia() {
+  try {
+    const d = await gql(`{ pedidosDelDia { ${CAMPOS} } }`);
+    document.getElementById("tablaDia").innerHTML = tabla(d.pedidosDelDia);
+  } catch (e) { document.getElementById("tablaDia").innerHTML = `<p class="err">${e.message}</p>`; }
+}
+
+async function buscarCedula() {
+  const c = document.getElementById("bCedula").value.trim();
+  try {
+    const d = await gql(`query($c:String!){ pedidosPorCedula(cedula:$c){ ${CAMPOS} } }`, {c});
+    document.getElementById("tablaBusqueda").innerHTML = tabla(d.pedidosPorCedula);
+  } catch (e) { document.getElementById("tablaBusqueda").innerHTML = `<p class="err">${e.message}</p>`; }
+}
+
+async function buscarId() {
+  const id = document.getElementById("bId").value;
+  try {
+    const d = await gql(`query($id:ID!){ pedidoPorId(id:$id){ ${CAMPOS} } }`, {id});
+    document.getElementById("tablaBusqueda").innerHTML = tabla(d.pedidoPorId ? [d.pedidoPorId] : []);
+  } catch (e) { document.getElementById("tablaBusqueda").innerHTML = `<p class="err">${e.message}</p>`; }
+}
+
+async function crear() {
+  const input = {
+    cedulaCliente: document.getElementById("nCedula").value.trim(),
+    nombreCliente: document.getElementById("nNombre").value.trim(),
+    direccionEntrega: document.getElementById("nDir").value.trim(),
+    descripcion: document.getElementById("nDesc").value.trim(),
+    total: parseFloat(document.getElementById("nTotal").value)
+  };
+  const m = document.getElementById("msgCrear");
+  try {
+    const d = await gql(`mutation($input:PedidoInput!){ crearPedido(input:$input){ id } }`, {input});
+    m.className = "msg ok"; m.textContent = "Pedido creado con ID " + d.crearPedido.id;
+    cargarDia();
+  } catch (e) { m.className = "msg err"; m.textContent = e.message; }
+}
+
+async function pdfDia() {
+  try { const d = await gql(`{ reporteDiarioPdf }`); descargar(d.reporteDiarioPdf, "reporte-diario.pdf"); }
+  catch (e) { alert(e.message); }
+}
+
+async function pdfPedido() {
+  const id = document.getElementById("bId").value;
+  try { const d = await gql(`query($id:ID!){ reportePedidoPdf(id:$id) }`, {id}); descargar(d.reportePedidoPdf, "pedido-" + id + ".pdf"); }
+  catch (e) { alert(e.message); }
+}
+
+cargarDia();
+</script>
+</body>
+</html>

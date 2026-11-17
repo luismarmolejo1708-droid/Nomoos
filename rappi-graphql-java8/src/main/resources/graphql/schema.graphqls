@@ -1,0 +1,41 @@
+"Pedido de domicilio realizado por un cliente."
+type Pedido {
+    id: ID!
+    cedulaCliente: String!
+    nombreCliente: String!
+    direccionEntrega: String!
+    descripcion: String!
+    estado: String!
+    total: Float!
+    fecha: String!
+    hora: String!
+}
+
+"Datos requeridos para registrar un nuevo pedido."
+input PedidoInput {
+    cedulaCliente: String!
+    nombreCliente: String!
+    direccionEntrega: String!
+    descripcion: String!
+    total: Float!
+}
+
+type Query {
+    "Consulta general de los pedidos realizados el dia de hoy."
+    pedidosDelDia: [Pedido!]!
+    "Pedidos de un cliente segun su numero de cedula."
+    pedidosPorCedula(cedula: String!): [Pedido!]!
+    "Un pedido segun su ID (null si no existe)."
+    pedidoPorId(id: ID!): Pedido
+    "Reporte PDF (Base64) de los pedidos del dia."
+    reporteDiarioPdf: String!
+    "Reporte PDF (Base64) de un pedido por ID."
+    reportePedidoPdf(id: ID!): String!
+}
+
+type Mutation {
+    "Ingresa un nuevo pedido a la base de datos."
+    crearPedido(input: PedidoInput!): Pedido!
+    "Cambia el estado de un pedido (PENDIENTE, EN_CAMINO, ENTREGADO)."
+    cambiarEstado(id: ID!, estado: String!): Pedido!
+}
